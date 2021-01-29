@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="author" content="Emil Hardarson">
+
+    <meta property="og:url" content="https://vidreisn.is/vextir" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Hvað kostar krónan þig?" />
+    <meta property="og:description" content="Það er of dýrt að búa á Íslandi. Reiknaðu hér hvað þú myndir spara ef þér byðust sömu vextir og í Evrópu." />
+    <meta property="og:image" content="https://vidreisn.is/vextir/vextir_cover.jpg" />
+    <meta property="fb:app_id" content="161235287796795" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Vaxtareiknivél Viðreisnar</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <!--script src="js/vextir.js"></script-->
+    <!--Caching workaround-->
+    <script type="text/javascript">
+        /*!
+ * @author Emil Hardarson
+ */
+
+        function calc(){
+
+            // Sækji og skrifa í form
+            // Value sýnir íslenska framsetningu á tölunum
+            // Numvalue geymir hreina tölu
+            var lan = Number(document.getElementById('input1').value.replace(/[^0-9\.]/, '').replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,''));
+            document.getElementById('input1').value = lan.toLocaleString().replace(/,/g, '.');
+            document.getElementById('input1').setAttribute('numvalue', String(lan));
+            var timi = Number(document.getElementById('input2').value);
+            var kaup = Number(document.getElementById('input3').value.replace(/[^0-9\.]/, '').replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,""));
+            document.getElementById('input3').value = kaup.toLocaleString().replace(/,/g, '.');
+            document.getElementById('input3').setAttribute('numvalue', String(kaup));
+
+            // Skilgreini stærðir
+            var v_i = 0.06/12.0; // Innlendir vextir, 6% árlega
+            var v_e = 0.019/12.0; // Erlendir vextir, 1.9% árlega
+            monthly_saving = (((lan*v_i)/(1-Math.pow((1+v_i),(-timi*12)))) - ((lan*v_e)/(1-Math.pow((1+v_e),(-timi*12)))));
+            console.log((((lan*v_i)/(1-Math.pow((1+v_i),(-timi*12)))) - ((lan*v_e)/(1-Math.pow((1+v_e),(-timi*12))))))
+
+            var before_tax = 1.6*monthly_saving; // Gerum rað fyrir 49% tekjuskatti -> 1/(1-0.4) ~= 1.6
+            var minutes_saved = Math.round(8*60*before_tax/kaup); // Hlutfall umfram vaxtakostnaðar fyrir skatt af mánaðarlaunum margfaldað með fjölda mínútna í vinnudegi
+            var weeks_saved = Math.round(48*before_tax/kaup); // Hlutfall umfram vaxtakostnaðar fyrir skatt af mánaðarlaunum margfaldað með fjölda vikna í vinnu 'ári'
+
+            var money_saved = String(Math.round(monthly_saving).toLocaleString().replace(/,/g, '.')); // Upphæðir með íslenskri framsetningu
+            var minutes_saved_str = String(minutes_saved);
+            var weeks_saved_str = String(weeks_saved);
+
+            // Athuga eintölu eða fleirtölu:
+            // Ef tala endar á '1' notum við eintölu
+            // Nema ef síðustu tvær eru '11'
+            // Dæmi: 591 króna, 7711 mínútur.
+            if (minutes_saved_str.slice(-1) == "1" && minutes_saved_str.slice(-2) != "11") {
+                var minute_text = "mínútu";
+            }
+            else {
+                var minute_text = "mínútur";
+            }
+            if (weeks_saved_str.slice(-1) == "1" && weeks_saved_str.slice(-2) != "11") {
+                var weeks_text = "vika";
+                var er = " er "
+            }
+            else {
+                var weeks_text = "vikur";
+                var er = " eru "
+            }
+            if (money_saved.slice(-1) == "1" && money_saved.slice(-2) != "11") {
+                var money_text = "krónu";
+            }
+            else {
+                var money_text = "krónur";
+            }
+
+            // Uppfæri reiti í niðurstöðum
+            $("#outPut1").html(money_saved + " " + money_text);
+            $("#outPut2").html(minutes_saved_str + " " + minute_text);
+            $("#outPut3").html(weeks_saved_str + " " + weeks_text);
+            $("#outPut4").html(er);
+
+            // Uppfæri lýsingu á niðurstöðum í 'Share' tökkum
+            if ( minutes_saved > 0 ) {
+                $("#shareBtn").attr('href',"http://www.facebook.com/dialog/feed?app_id=161235287796795&link=https://vidreisn.is/vextir&caption=Reiknivél&quote=Ég%20vinn%20" + minutes_saved_str + "%20"+ minute_text +"%20á%20dag%20fyrir%20séríslenskum%20vöxtum.%20Hvað%20með%20þig?");
+                $("#twitterShareBtn").attr('href',href="https://twitter.com/intent/tweet?text=Ég%20vinn%20" + minutes_saved_str + "%20" + minute_text + "%20á%20dag%20fyrir%20séríslenskum%20vöxtum.%20Hvað%20með%20þig?%20https://vidreisn.is/vextir");
+            }
+            else {
+                $("#shareBtn").attr('href',"http://www.facebook.com/dialog/feed?app_id=161235287796795&link=https://vidreisn.is/vextir&caption=Reiknivél");
+                $("#twitterShareBtn").attr('href',href="https://twitter.com/intent/tweet?text=%20https://vidreisn.is/vextir");
+            }
+
+
+            // Passa að sparaðar vikur/mínútur verði ekki
+            // fáránlega há
+            if (weeks_saved <= 52) {
+                $("#errorMsg").css("display", "none");
+                $("#savingsMsg").css("display", "block");
+            }
+            else {
+                $("#errorMsg").css("display", "block");
+                $("#savingsMsg").css("display", "none");
+            }
+
+        }
+    </script>
+
+    <script type="text/javascript">
+        window.onload = function(){
+            calc();
+        };
+    </script>
+
+
+    <link href="https://fonts.googleapis.com/css?family=Rubik" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-social.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!--link rel="stylesheet" href="css/vextir.css"-->
+    <!--Caching workaround:-->
+    <style>
+        *{
+            font-family: 'Rubik', sans-serif;
+
+        }
+        #inPut1, #inPut2, #inPut3 {
+            background-color: #ffffff;
+            color: #4a616c;
+            font-weight: 700;
+            text-align: center;
+            padding: 5px;
+            border: 2px solid #afd3df;
+            cursor: pointer;
+        }
+
+        .align-center{
+            text-align: center;
+        }
+
+        .align-right{
+            text-align: right;
+        }
+
+        .align-left{
+            text-align: left;
+        }
+
+        .prelogo {
+            padding-bottom: 20px;
+            padding-top: 40px;
+        }
+
+        .postlogo{
+            padding-bottom: 20px;
+            padding-top: 40px;
+        }
+
+        .box-border{
+            border: 2px solid #afd3df;
+            border-radius: 5px;
+            padding-bottom: 20px;
+            padding-top: 40px;
+        }
+
+        .calculator-logo{
+            margin:	0 auto;
+            display: block;
+            position: relative;
+            top: -50px;
+        }
+
+        h3{
+            margin-top: -10px;
+        }
+
+        #inPut3:focus, #inPut1:focus, #inPut2:focus {
+            background: #b5d5e0;
+            outline-offset: 0px;
+            outline: 2px solid #4a616c;
+        }
+
+        label {
+            font-weight: 700;
+            color: #48606a;
+        }
+
+        *::-webkit-input-placeholder {
+            color: #4a616c;
+            opacity: 0.7;
+        }
+        *:-moz-placeholder {
+            /* FF 4-18 */
+            color: #4a616c;
+            opacity: 0.7;
+        }
+        *::-moz-placeholder {
+            /* FF 19+ */
+            color: #4a616c;
+            opacity: 0.7;
+        }
+        *:-ms-input-placeholder {
+            /* IE 10+ */
+            color:#4a616c;
+            opacity: 0.7;
+        }
+        input:focus::-webkit-input-placeholder { color:transparent; }
+        input:focus:-moz-placeholder { color:transparent; } /* FF 4-18 */
+        input:focus::-moz-placeholder { color:transparent; } /* FF 19+ */
+        input:focus:-ms-input-placeholder { color:transparent; } /* IE 10+ */
+
+        .savings{
+            background-color: #dff2f9;
+            color: #4a616c;
+            font-size: 13pt;
+            padding: 20px;
+            margin: 10%;
+            border: 2px solid #afd3df;
+        }
+
+        .error{
+            background-color: #ffcfcf;
+            color: #4a616c;
+            font-size: 13pt;
+            padding: 20px;
+            margin: 10%;
+            border: 2px solid #ff5d5d;
+            display: none;
+        }
+
+        @media screen and (max-width: 768px) {
+            .coverimg {
+                object-fit: cover;
+                width: 100%;
+                height: 30vw;
+                overflow: hidden;
+            }
+        }
+
+        @media screen and (min-width: 600px) {
+            .input-group {
+                padding-right: 30%;
+            }
+        }
+
+        .btn {
+            -webkit-appearance: none;
+        }
+
+        .forsendur{
+            color: #4a616c;
+            font-size: 11pt;
+            padding: 20px;
+            margin: 5%;
+            border: 2px solid #afd3df;
+            display: none;
+        }
+    </style>
+
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-108382317-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-108382317-1');
+    </script>
+
+    <script>
+        /**
+         * Function that tracks a click on an outbound link in Analytics.
+         * This function takes a valid URL string as an argument, and uses that URL string
+         * as the event label. Setting the transport method to 'beacon' lets the hit be sent
+         * using 'navigator.sendBeacon' in browser that support it.
+         */
+        var trackOutboundLink = function(url) {
+            ga('send', 'event', 'outbound', 'click', url, {
+                'transport': 'beacon',
+                'hitCallback': function(){document.location = url;}
+            });
+        }
+    </script>
+
+</head>
+
+<body>
+
+<script>
+    window.fbAsyncInit = function() {
+        FB.init({
+            appId      : '161235287796795',
+            xfbml      : true,
+            version    : 'v2.10'
+        });
+
+        FB.AppEvents.logPageView();
+
+    };
+
+    (function(d, s, id){
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) {return;}
+        js = d.createElement(s); js.id = id;
+        js.src = "https://connect.facebook.net/en_US/sdk.js";
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-4 align-center prelogo cover" style=" overflow: hidden">
+            <img alt="Euro" title="Euro" class="coverimg" src="euro.jpg" height="100%">
+        </div>
+        <div class="col-md-8 align-center prelogo">
+            <div class="align-center postlogo box-border" style="padding: 20px">
+                <img class="calculator-logo" src="C-blatt.png" style="width: 60px;">
+                <h3>Hvað kostar krónan þig?</h3>
+                <p style="margin-top: 35px; margin-bottom: 30px"><strong>Það er of dýrt að búa á Íslandi.</strong> Vegna óstöðugleika krónunnar eru vextir hér margfalt hærri en í Evrópu.</p>
+                <p><strong>Hvað myndir þú spara</strong> ef hér byðust sömu lánakjör og í Evrópu?</p>
+                <div style="margin: 20px">
+                    <div class="form-group row">
+                        <label for="input1" class="col-4 col-form-label align-right">Upphæð láns</label>
+                        <div class="col-8 align-left">
+                            <div class="input-group">
+                                <input class="form-control" type="text" step="1000000" numvalue="20000000" value="20.000.000" id="input1" oninput="calc();">
+                                <span class="input-group-addon" id="basic-addon1" >kr.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="input2" class="col-4 col-form-label align-right">Lánstími</label>
+                        <div class="col-8 align-left">
+                            <div class="input-group">
+                                <input id="input2" type="number"  class="form-control" value="40" aria-describedby="basic-addon2" oninput="calc();">
+                                <span class="input-group-addon" id="basic-addon2">ár</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="input3" class="col-4 col-form-label align-right">Laun</label>
+                        <div class="col-8 align-left">
+                            <div class="input-group">
+                                <input class="form-control" type="text" value="400.000" numvalue="400000" id="input3" oninput="calc();">
+                                <span class="input-group-addon" id="basic-addon3">kr.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="savings" id="savingsMsg">
+                    <p>Þú myndir spara <strong id="outPut1">39.594 krónur</strong> á mánuði.</p>
+                    <p>Þetta þýðir að þú vinnur <strong id="outPut2">76 mínútu</strong> aukalega á dag fyrir íslenskum vöxtum. Það <span id="outPut4">eru</span> <strong id="outPut3">8 vikur</strong> á ári.</p>
+                    <p><strong>Sættir þú þig við þetta?</strong> Deildu niðurstöðunum á Facebook.</p>
+                </div>
+                <div class="error" id="errorMsg">
+                    <p>Tekjurnar þínar duga ekki fyrir vaxtamuninum.</p>
+                </div>
+                <div class="row" style="margin: 0px 10px;">
+                    <div class="col-sm-6 col-xs-6" style="padding-bottom: 15px;">
+                        <a id="shareBtn" href="http://www.facebook.com/dialog/feed?app_id=161235287796795&link=https://vidreisn.is/vextir" target="_blank" class="btn btn-block btn-social btn-facebook">
+                            <span class="fa fa-facebook"></span> Deila
+                        </a>
+                    </div>
+                    <div class="col-sm-6 col-xs-6" style="padding-bottom: 10px;">
+                        <a id="twitterShareBtn" href="https://twitter.com/intent/tweet" class="btn btn-block btn-social btn-twitter">
+                            <span class="fa fa-twitter"></span> Tísta
+                        </a>
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 20px;"><p>(Engar áhyggjur, þú deilir <strong>einungis mínútufjöldanum</strong>.)</p></div>
+
+                <div style="margin-top: 20px;" id="forsendur_link"><p><a href="#" data-toggle="collapse" data-target="#forsendur">Sýna forsendur reikninga</a></p></div>
+
+                <div class="row text-muted align-left forsendur collapse" id="forsendur">
+                    <div class="col-md-12">
+                        <p>Miðað er við að mánaðarlaunum sé aflað með 40 tíma vinnuviku. Í útreikningum er gert ráð fyrir að þú haldir eftir 60% af heildarlaunum, eftir að tekið hafi verið tillit til skatta og annarra launatengdra gjalda.</p>
+
+                        <p>Í útreikningunum eru <a href="http://herborg.is">meðalvextir óverðtryggðra íbúðalána á Íslandi</a> bornir saman við sams konar <a href="https://www.numbeo.com/cost-of-living/country_price_rankings">meðalvexti á þeim Norðurlöndum sem nota Evruna</a> eða hafa gjaldmiðilinn sinn tengdan við hana. Gert er ráð fyrir mánaðarlegum afborgunum af jafngreiðsluláni.</p>
+
+                        <p>Munurinn á kjörum verðtryggðra lána er sambærilegur. Á móti lægri vaxtaprósentu hækkar höfuðstóll verðtryggðra lána í samræmi við verðbólgu, sem hægir verulega á eignamyndun. Binding krónunnar við sterkari gjaldmiðil eða upptaka Evru myndi gera verðtrygginguna óþarfa og óverðtryggð lán, til langs tíma og með lágum vöxtum, að raunhæfum kosti.</p>
+
+                        <p>Sjá nánar: <a href="https://vidreisn.is/is/malefni/efnahagsmal">Stefna Viðreisnar í efnahagsmálum</a>.</p>
+                    </div>
+                    <div style="margin-top: 35px; text-align: center;">
+                        <img src="logo.png" width="150px">
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
